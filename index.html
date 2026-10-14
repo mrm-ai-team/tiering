@@ -163,7 +163,7 @@ try{const d=JSON.parse(localStorage.getItem("tier_draft")||"null"); if(d&&d.base
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const nowIso=()=>new Date().toISOString();
-function weightsOf(p){const w=weights[p.id]; return {cw:w?.cw?w.cw.slice():p.cw.slice(), sw:w?.sw?w.sw.slice():p.sw.slice()};}
+function weightsOf(p){return {cw:p.cw.slice(), sw:p.sw.slice()};} // weights are fixed per proposal; only model scores are editable (Models tab)
 function validS(s){return Array.isArray(s)&&s.length===10?s.map(v=>v===1||v===2||v===3?v:null):Array(10).fill(null);}
 function allModels(){
   const base=BASE.map(m=>{const e=work.edits[m.id]; return e?{...m,s:validS(e.s),a4:(e.a4===1||e.a4===2||e.a4===3)?e.a4:m.a4,edited:true}:{...m};});
@@ -236,15 +236,15 @@ function matrixHtml(p){
       const cwChanged=cw[ci]!==base.cw[ci], swChanged=sw[si]!==BSW[si];
       rows+=`<tr class="${ci%2?'grp':''}">
         <td>${k===0?`<b>${esc(cn)}</b>`:""}</td>
-        <td class="num">${k===0?`<input class="w ${cwChanged?'chg':''}" id="cw-${p.id}-${ci}" type="number" min="0" max="100" step="1" value="${cw[ci]}" data-p="${p.id}" data-k="cw" data-i="${ci}" aria-label="${esc(cn)} weight %">`:""}</td>
+        <td class="num">${k===0?`<b class="${cwChanged?'chg':''}">${cw[ci]}</b>`:""}</td>
         <td class="${removed?'rem':''}">${esc(subName)}</td>
-        <td class="num"><input class="w ${swChanged?'chg':''}" id="sw-${p.id}-${si}" type="number" min="0" max="100" step="1" value="${sw[si]}" data-p="${p.id}" data-k="sw" data-i="${si}" aria-label="${esc(SUBS[si])} sub-weight %"></td>
+        <td class="num"><span class="${swChanged?'chg':''}">${sw[si]}</span></td>
         ${conds.join("")}</tr>`;
     });
   });
   const tot=cw.reduce((a,b)=>a+b,0);
   return `<div class="scroll"><table class="matrix"><thead><tr><th>Criteria</th><th class="num">Weight %</th><th>Sub-criterion</th><th class="num">Sub-weight %</th><th>1 (Low)</th><th>2 (Medium)</th><th>3 (High)</th></tr></thead><tbody>${rows}
-  <tr><td><b>Total</b></td><td class="num"><span class="wtot ${tot!==100?'bad':''}">${tot}%</span></td><td colspan="5" class="note">${tot!==100?"Criterion weights must add up to 100%.":"Blue text = changed versus the current methodology. Weight changes are for your own testing on this screen and are not saved for others."}</td></tr></tbody></table></div>`;
+  <tr><td><b>Total</b></td><td class="num"><span class="wtot ${tot!==100?'bad':''}">${tot}%</span></td><td colspan="5" class="note">${tot!==100?"Criterion weights must add up to 100%.":"Blue text = changed versus the current methodology. Weights are fixed for each proposal; scores are changed on the Models tab."}</td></tr></tbody></table></div>`;
 }
 function resultsHtml(p){
   const ms=allModels().filter(complete); const cur=PROPS[0];
@@ -260,7 +260,7 @@ function resultsHtml(p){
 function proposalHtml(p){
   return `<section class="panel" role="tabpanel" aria-labelledby="tab-${p.id}">
    <div class="desc"><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><h2>${esc(p.name)}</h2><p class="lead">${esc(p.desc)}</p></div>
-   <div class="toolbar">${p.rec?'<span class="pill red">Recommended</span>':''}<button class="mini" data-reset="${p.id}">Reset weights</button></div></div>
+   <div class="toolbar">${p.rec?'<span class="pill red">Recommended</span>':''}</div></div>
    <h3>Scoring matrix</h3>${matrixHtml(p)}
    <h3>Calculator — tier of each model under this option</h3>${resultsHtml(p)}
    <p class="note">Scores come from the Models tab. Rows in blue are added models; "changed" marks listed models whose scores were changed. ${p.ref?"System Access uses the refined (criticality-based) condition.":"System Access uses the current condition text."}</p></section>`;
