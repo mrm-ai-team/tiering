@@ -1,0 +1,417 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title id="pagetitle">GenAI Tiering Calculator</title>
+<meta id="pagefit" name="claude:viewport-fit-sides" content="cover">
+<link id="pagefont" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap">
+<style id="pagecss">
+/* Layout: bank-report look — white page, navy table heads, red accent rule; tabs per option, matrix above calculator */
+:root{
+  --bg:#FFFFFF; --surface:#F6F7F9; --surface2:#ECEFF4; --fg:#111111; --muted:#5A5E66; --line:#D5D9E0;
+  --navy:#0B1F3A; --navy-fg:#FFFFFF; --accent:#EC3342; --changed:#1F5FAF; --user:#EAF1FB;
+  --t1-bg:#FCE4E4; --t1-fg:#B5001A; --t2-bg:#FFF2CC; --t2-fg:#8A4B00; --t3-bg:#E2EFDA; --t3-fg:#22673A;
+  --font:'Carlito', Calibri, 'Segoe UI', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F141B; --surface:#161D27; --surface2:#1E2733; --fg:#E8EBF0; --muted:#A3AAB5; --line:#2E3846;
+  --navy:#22395C; --navy-fg:#FFFFFF; --accent:#FF5A67; --changed:#7FB0F0; --user:#1B2B42;
+  --t1-bg:#4A1A1F; --t1-fg:#FF9AA4; --t2-bg:#4A3810; --t2-fg:#FFD27A; --t3-bg:#173A25; --t3-fg:#8FE0AA; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F141B; --surface:#161D27; --surface2:#1E2733; --fg:#E8EBF0; --muted:#A3AAB5; --line:#2E3846;
+  --navy:#22395C; --navy-fg:#FFFFFF; --accent:#FF5A67; --changed:#7FB0F0; --user:#1B2B42;
+  --t1-bg:#4A1A1F; --t1-fg:#FF9AA4; --t2-bg:#4A3810; --t2-fg:#FFD27A; --t3-bg:#173A25; --t3-fg:#8FE0AA; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.45;margin:0}
+.wrap{max-width:1320px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:6px;border-left:6px solid var(--accent);padding-left:16px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:30px;line-height:1.15;margin:0;text-wrap:balance}
+h2{font-size:22px;margin:0;text-wrap:balance}
+h3{font-size:17px;margin:0}
+p{margin:0}
+.lead{color:var(--muted);max-width:75ch}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:2px solid var(--navy);padding-bottom:0}
+.tab{font:inherit;font-weight:700;font-size:14px;padding:9px 14px;border:1px solid var(--line);border-bottom:none;background:var(--surface);color:var(--fg);cursor:pointer;border-radius:6px 6px 0 0}
+.tab[aria-selected="true"]{background:var(--navy);color:var(--navy-fg);border-color:var(--navy)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--changed);outline-offset:2px}
+.tab .rec{font-size:11px;font-weight:700;color:var(--accent);margin-left:6px}
+.tab[aria-selected="true"] .rec{color:#FFB3BA}
+section.panel{display:flex;flex-direction:column;gap:16px}
+.desc{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--surface2);color:var(--fg)}
+.pill.red{background:var(--accent);color:#fff}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;min-width:0}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{background:var(--navy);color:var(--navy-fg);font-weight:700;font-size:13px;text-align:left;padding:8px 10px;white-space:nowrap}
+td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top;font-size:14px}
+tr.grp td{background:var(--surface)}
+td.num,th.num{text-align:center}
+.matrix td.cond{min-width:200px}
+.chg{color:var(--changed);font-weight:700}
+.rem{color:var(--muted);font-style:italic}
+input.w{width:64px;font:inherit;font-size:14px;padding:3px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg);text-align:right}
+input.w.chg{border-color:var(--changed)}
+.wtot{font-weight:700}
+.wtot.bad{color:var(--t1-fg)}
+.tier{display:inline-block;min-width:62px;text-align:center;font-weight:700;padding:2px 8px;border-radius:4px;font-size:13px;white-space:nowrap}
+.t1{background:var(--t1-bg);color:var(--t1-fg)} .t2{background:var(--t2-bg);color:var(--t2-fg)} .t3{background:var(--t3-bg);color:var(--t3-fg)} .t0{background:var(--fg);color:var(--bg)}
+.mv{font-size:12px;font-weight:700;white-space:nowrap}
+.mv.up{color:var(--t1-fg)} .mv.down{color:var(--t3-fg)} .mv.eq{color:var(--muted);font-weight:400}
+tr.mine td{background:var(--user)}
+.co{color:var(--muted);font-size:13px;white-space:nowrap}
+.counts{display:flex;flex-wrap:wrap;gap:10px}
+.count{border:1px solid var(--line);border-radius:6px;padding:10px 14px;display:flex;gap:10px;align-items:center;background:var(--surface)}
+.count b{font-size:22px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button.btn{font:inherit;font-weight:700;font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid var(--navy);background:var(--navy);color:var(--navy-fg);cursor:pointer}
+button.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
+button.mini{font:inherit;font-size:12px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+select.sc{font:inherit;font-size:14px;padding:3px 4px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+select.sc.edited{border-color:var(--changed);color:var(--changed);font-weight:700}
+input.txt{font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg);width:100%;min-width:150px}
+.note{font-size:13px;color:var(--muted)}
+.save{font-size:13px;color:var(--muted)}
+.who{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.who img{width:18px;height:18px;border-radius:50%}
+.savebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px}
+.savebar label{font-size:13px;color:var(--muted)}
+.banner{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);align-items:center}
+@media (max-width:640px){h1{font-size:24px}.tab{padding:8px 10px;font-size:13px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+
+<div class="wrap" id="app">
+  <header>
+    <span class="eyebrow">Model Risk Management · GenAI Model Tiering</span>
+    <h1>Tiering calibration proposals and calculator</h1>
+    <p class="lead">Each tab shows one option: the scoring matrix with its weights, and the tier every model gets under it. Add models on the <b>Models</b> tab and score each sub-criterion 1, 2 or 3; every option and the summary update at once. Every change is saved automatically for everyone who opens this page and recorded, with your name, in the <b>Change log</b>.</p>
+  </header>
+  <div class="legend">
+    <span><span class="tier t1">Tier 1</span> score above 2.00 — full validation, all changes reviewed</span>
+    <span><span class="tier t2">Tier 2</span> 1.50–2.00 — validation, Minor changes not reviewed</span>
+    <span><span class="tier t3">Tier 3</span> below 1.50 — NOS, only Major changes checked</span>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <div class="savebar" id="savebar" hidden></div>
+  <p class="banner" id="banner" hidden></p>
+  <main id="main"></main>
+  <p class="save" id="save" aria-live="polite"></p>
+</div>
+
+<script>
+const API="https://script.google.com/macros/s/AKfycbxT4r4-8FzTFGo77LLRw49vbkwM484KF52SDTKv-3UfvkCcslYpZKTmPEHeme9_xa9CVw/exec";
+window.storage={
+  get:async function(k){const r=await fetch(API+"?api=get&t="+Date.now(),{cache:"no-store"}); if(!r.ok) throw new Error("http "+r.status); const v=await r.text(); if(!v) throw new Error("empty"); return {key:k,value:v,shared:true};},
+  set:async function(k,v){const r=await fetch(API,{method:"POST",body:v}); const t=await r.text(); if(t!=="ok") throw new Error(t); return {key:k,value:v,shared:true};}
+};
+</script>
+<script type="application/json" id="shared">{"models":{},"edits":{},"log":[{"at":"2026-10-14T14:02:51.170Z","model":"New model","action":"Removed","detail":"Scores: – / – / – / – / – / – / – / – / – / –","by":"Fidan"},{"at":"2026-10-14T14:02:42.982Z","model":"New model","action":"Added","detail":"New model row created","by":"Fidan"}]}</script>
+<script id="appjs">
+const SUBS=["Share of business activity","GenAI usage cost","Deployment & Dependency","Data Sensitivity","System Access","Output Variability","Backtest possibility","Audience Type","Audience Reach","Harm"];
+const SHORT=["Share","Cost","Deploy.","Data","Access","Output var.","Backtest","Aud. type","Aud. reach","Harm"];
+const CRIT=[["Materiality",[0,1]],["Complexity & Design",[2,3,4]],["Uncertainty",[5,6]],["Reputational Risk",[7,8,9]]];
+const V4=[["< 10% of the selected reference measure","10%–30% of the selected reference measure","> 30% of the selected reference measure"],
+["Low and predictable; effective caps and alerts (≤ $500/month)","Material or moderately variable; controls and limits in place (≤ $1,000/month)","High or highly variable; weak limits or significant overrun exposure (> $5,000/month)"],
+["Internally developed and operated; dependencies fully controlled","Externally developed model deployed locally; configurable or fine-tunable","Proprietary third-party or externally hosted model with limited inspectability or control"],
+["Public or non-sensitive internal data; no personal or confidential information","Confidential business information, excluding highly restricted data","Highly restricted: financial / transaction, credit, credentials, biometric, special-category, banking secrecy"],
+["No access: no direct access to internal production systems","Read-only: may query or retrieve; cannot create, modify, delete or trigger processes","Read-write or execution: create, modify, delete records, execute transactions, trigger processes"],
+["Deterministic or materially identical outputs","Minor variations that do not usually change the conclusion","Materially different outputs may occur because of stochastic behaviour"],
+["Sufficient representative evidence is available","Evidence is limited; additional experimental data is required","Relevant inputs, outcomes or evaluation evidence are unavailable"],
+["Internal & one vertical only","Internal & ecosystem-wide","External / customer-facing"],
+["< 3% of the relevant population","3%–10%","> 10%"],
+["Incorrect content would cause only minor internal inconvenience or rework","Material but generally remediable customer, conduct or reputational harm","Severe or widespread customer harm, financial loss, discrimination, regulatory breach"]];
+const REF=[["< 10% of the business-line total (owner proposes, MRM approves)","10%–30% of the business-line total","> 30% of the business-line total"],
+["< $1,000/month; effective caps and alerts","$1,000–5,000/month; controls and limits in place","> $5,000/month, or no effective cap"],
+["Internal, or hosted inside the bank; data does not leave the bank","Externally hosted; data masked before sending, or security controls in place","Externally hosted; unmasked data sent without security controls"],
+["InfoSec class Public / Internal, as the data reaches the model","InfoSec class Confidential","InfoSec class Strictly confidential, incl. banking secrecy"],
+["No access or read-only","Writes to a non-critical business system","Writes to a critical system"],
+["Same conclusion every time; wording may vary by deliberate randomisation",null,null],
+["Representative golden dataset, ground truth or benchmark exists","Test set must be built or labelled for validation","No ground truth or benchmark can be built"],
+[null,null,null],["< 3% of people who receive or are directly affected (rolling 12 months)","3%–10%, same basis","> 10%, same basis"],[null,null,null]];
+const BSW=[80,20,20,40,40,40,60,25,25,50];
+const PROPS=[
+ {id:"cur",tab:"Current (v4)",name:"Current methodology (v4)",desc:"The methodology as it stands today — the reference for every proposal.",cw:[20,45,10,25],sw:BSW,ref:false,rem:false},
+ {id:"p1",tab:"Proposal 1",name:"Proposal 1 — Reweighting of criteria",desc:"Weights move from Complexity & Design (45% → 35%) and Uncertainty (10% → 5%) to Reputational Risk (25% → 40%). Scoring conditions unchanged.",cw:[20,35,5,40],sw:BSW,ref:false,rem:false},
+ {id:"p2",tab:"Proposal 2",name:"Proposal 2 — Reweighting and refined scoring conditions",desc:"Complexity & Design 40%, Reputational Risk 35%, Materiality 20%, Uncertainty 5%. Scoring conditions refined; System Access graded by the criticality of the system written to.",cw:[20,40,5,35],sw:BSW,ref:true,rem:false,rec:true},
+ {id:"p4",tab:"Proposal 3",name:"Proposal 3 — Impact-weighted approach",desc:"Materiality 15%, Complexity & Design 35%, Uncertainty 5%, Reputational Risk 45%. Same refined conditions as Proposal 2.",cw:[15,35,5,45],sw:BSW,ref:true,rem:false},
+ {id:"p5",tab:"Proposal 4",name:"Proposal 4 — Birmarket proposal",desc:"Deployment & Dependency, Output Variability and Backtest removed. Complexity & Design 30% (Data 50%, Access 50%), Uncertainty 0%, Reputational Risk 50%. Refined conditions.",cw:[20,30,0,50],sw:[80,20,0,50,50,40,60,25,25,50],ref:true,rem:true}];
+// s = sub-criterion scores (System Access scored on the refined text); a4 = System Access under the current text (used by Current and Proposal 1)
+const BASE=[
+ ["b1","Fintech","Customer Service FAQ Chatbot",[3,3,3,3,2,2,1,3,3,3],2],["b2","Fintech","AI Evaluator",[1,2,3,2,1,2,1,1,1,1],1],
+ ["b3","Fintech","Front Office Copilot",[1,1,3,1,1,2,1,1,1,1],1],["b4","Fintech","Bir Assistant",[1,2,3,2,2,2,1,1,3,1],2],
+ ["b5","Fintech","Jira Assistant",[1,1,3,2,1,2,1,1,1,1],1],["b6","Fintech","SARA",[1,1,3,1,1,2,1,1,1,1],1],
+ ["b7","Fintech","STT",[1,1,1,3,1,1,1,3,1,2],1],["b8","Fintech","Masker",[1,1,1,3,1,1,1,3,1,2],1],
+ ["b9","Fintech","AI Voice Bot for Debt Collection",[3,1,1,2,2,1,1,3,3,1],1],["b10","Fintech","Retail Telesales with AI Bot",[1,2,1,2,1,2,1,3,3,3],1],
+ ["b11","Fintech","Micro Sales AI Agent",[1,2,1,2,1,2,1,3,1,3],1],["b12","Fintech","AI Dashboard",[1,1,2,3,1,2,1,1,1,1],2],
+ ["b13","Fintech","APIK Commission Automation",[1,1,1,2,1,1,1,1,1,1],2],["b14","Fintech","CX Feedback",[1,1,1,2,1,1,1,1,1,1],2],
+ ["b15","Birmarket","AI initial call",[3,2,3,3,2,2,2,3,3,2],3],["b16","Birmarket","Initial call — low-risk variant",[3,1,3,3,1,2,1,3,1,1],1],
+ ["b17","Birmarket","Call transcription",[3,1,2,3,2,1,1,1,1,1],3],["b18","Birmarket","Call quality scoring",[3,2,3,3,2,2,2,1,1,2],3],
+ ["b19","Birmarket","Internal knowledge assistant",[1,1,3,2,1,2,2,2,1,1],2]
+].map(([id,co,name,s,a4])=>({id,co,name,s,a4,base:true}));
+
+// ---- Shared state lives in the page itself (the #shared JSON block) and is saved by republishing the page.
+const CAP={title:document.getElementById("pagetitle").outerHTML, fit:document.getElementById("pagefit").outerHTML, font:document.getElementById("pagefont").outerHTML,
+  css:document.getElementById("pagecss").textContent, app:document.getElementById("app").outerHTML, js:document.getElementById("appjs").textContent,
+  reset:([...document.head.querySelectorAll("style")].find(s=>s.textContent.includes("[hidden]"))||{textContent:""}).textContent};
+let saved={models:{},edits:{},log:[]};
+try{const j=JSON.parse(document.getElementById("shared").textContent); if(j&&typeof j==="object") saved={models:j.models||{},edits:j.edits||{},log:Array.isArray(j.log)?j.log:[]};}catch(e){}
+let work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits}));
+let pending=[];
+let weights={}, tab="p2", artifactApi=null, canSave=null, saving=false, myName="";
+try{const t=localStorage.getItem("tier_tab"); if(t) tab=t;}catch(e){}
+try{const w=JSON.parse(localStorage.getItem("tier_weights")||"{}"); if(w&&typeof w==="object") weights=w;}catch(e){}
+try{myName=localStorage.getItem("tier_name")||"";}catch(e){}
+try{const d=JSON.parse(localStorage.getItem("tier_draft")||"null"); if(d&&d.base===JSON.stringify(saved.log[0]||null)){work=d.work; pending=d.pending||[];}}catch(e){}
+
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nowIso=()=>new Date().toISOString();
+function weightsOf(p){const w=weights[p.id]; return {cw:w?.cw?w.cw.slice():p.cw.slice(), sw:w?.sw?w.sw.slice():p.sw.slice()};}
+function validS(s){return Array.isArray(s)&&s.length===10?s.map(v=>v===1||v===2||v===3?v:null):Array(10).fill(null);}
+function allModels(){
+  const base=BASE.map(m=>{const e=work.edits[m.id]; return e?{...m,s:validS(e.s),a4:(e.a4===1||e.a4===2||e.a4===3)?e.a4:m.a4,edited:true}:{...m};});
+  const added=Object.entries(work.models).map(([id,d])=>({id,co:String(d.co||""),name:String(d.name||"Unnamed model"),s:validS(d.s),createdAt:d.createdAt||"",mine:true}))
+    .sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt))).map(m=>({...m,a4:m.s[4]}));
+  return base.concat(added);
+}
+function complete(m){return m.s.every(v=>v===1||v===2||v===3);}
+function calc(p,m){
+  const {cw,sw}=weightsOf(p); const s=m.s.slice(); if(!p.ref) s[4]=m.a4;
+  const crit=CRIT.map(([,ix])=>ix.reduce((a,i)=>a+s[i]*sw[i]/100,0));
+  return {crit,score:crit.reduce((a,c,i)=>a+c*cw[i]/100,0)};
+}
+function tierOf(score){const r=Math.round(score*1e6)/1e6; return r<1.5?3:(r<=2?2:1);}
+const tierHtml=t=>`<span class="tier t${t}">Tier ${t}</span>`;
+function note(model,action,detail){pending.push({at:nowIso(),model,action,detail}); keepDraft(); barMsg=""; scheduleSave();}
+function keepDraft(){try{localStorage.setItem("tier_draft",JSON.stringify({base:JSON.stringify(saved.log[0]||null),work,pending}))}catch(e){}}
+function clearDraft(){try{localStorage.removeItem("tier_draft")}catch(e){}}
+
+function renderTabs(){
+  const names=PROPS.map(p=>[p.id,p.tab,p.rec]).concat([["models","Models"],["summary","Summary"],["log","Change log"]]);
+  document.getElementById("tabs").innerHTML=names.map(([id,t,rec])=>`<button class="tab" role="tab" id="tab-${id}" aria-selected="${id===tab}" data-tab="${id}">${esc(t)}${rec?'<span class="rec">Recommended</span>':''}</button>`).join("");
+}
+document.getElementById("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab"); if(!b) return; tab=b.dataset.tab; try{localStorage.setItem("tier_tab",tab)}catch(e){} render();});
+
+function renderSavebar(){
+  const el=document.getElementById("savebar"); el.hidden=false;
+  if(!document.getElementById("myname")){
+    el.innerHTML=`<label for="myname"><b>Your name</b></label><input class="txt" id="myname" style="max-width:240px" placeholder="Name, company"><span class="note" id="barmsg" role="status"></span>`;
+    document.getElementById("myname").value=myName;
+  }
+  let m=barMsg;
+  if(!m) m=saving?"Saving…":pending.length?(myName.trim()?"Saving…":"Enter your name — your changes are saved automatically as soon as you do."):"All changes are saved automatically and logged with your name.";
+  document.getElementById("barmsg").textContent=m;
+}
+let saveTimer=null;
+function scheduleSave(){clearTimeout(saveTimer); saveTimer=setTimeout(autoSave,800);}
+async function autoSave(){
+  if(!pending.length||saving) return;
+  if(!myName.trim()){barMsg=""; renderSavebar(); return;}
+  if(!window.storage){barMsg="Saving is not available here."; renderSavebar(); return;}
+  const by=myName.trim(); saving=true; barMsg=""; renderSavebar();
+  const batch=pending.slice(); const snap=JSON.parse(JSON.stringify(work));
+  try{
+    const dm={},de={};
+    new Set([...Object.keys(saved.models),...Object.keys(snap.models)]).forEach(id=>{if(JSON.stringify(saved.models[id])!==JSON.stringify(snap.models[id])) dm[id]=snap.models[id]??null;});
+    new Set([...Object.keys(saved.edits),...Object.keys(snap.edits)]).forEach(id=>{if(JSON.stringify(saved.edits[id])!==JSON.stringify(snap.edits[id])) de[id]=snap.edits[id]??null;});
+    const latest=(await readShared())||saved;
+    Object.entries(dm).forEach(([id,d])=>{if(d==null) delete latest.models[id]; else latest.models[id]=d;});
+    Object.entries(de).forEach(([id,e])=>{if(e==null) delete latest.edits[id]; else latest.edits[id]=e;});
+    latest.log=batch.slice().reverse().map(x=>({...x,by:x.by||by})).concat(latest.log).slice(0,1000);
+    await window.storage.set(KEY,JSON.stringify(latest),true);
+    saved=latest; pending=pending.slice(batch.length);
+    if(!pending.length){work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); clearDraft();} else keepDraft();
+    saving=false; barMsg="Saved ✓ "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); render();
+    if(pending.length) scheduleSave();
+  }catch(err){saving=false; keepDraft(); barMsg="Could not save just now — retrying…"; renderSavebar(); setTimeout(()=>{barMsg=""; scheduleSave();},5000);}
+}
+function matrixHtml(p){
+  const {cw,sw}=weightsOf(p); const base=PROPS[0];
+  let rows="";
+  CRIT.forEach(([cn,ix],ci)=>{
+    ix.forEach((si,k)=>{
+      const removed=p.rem&&(si===2||si===5||si===6);
+      const subName=SUBS[si]+(p.ref&&si===6?" → Evaluability":"");
+      const conds=[0,1,2].map(j=>{
+        if(removed) return `<td class="cond rem">Removed</td>`;
+        if(p.ref&&REF[si][j]) return `<td class="cond chg">${esc(REF[si][j])}</td>`;
+        return `<td class="cond">${esc(V4[si][j])}</td>`;});
+      const cwChanged=cw[ci]!==base.cw[ci], swChanged=sw[si]!==BSW[si];
+      rows+=`<tr class="${ci%2?'grp':''}">
+        <td>${k===0?`<b>${esc(cn)}</b>`:""}</td>
+        <td class="num">${k===0?`<input class="w ${cwChanged?'chg':''}" id="cw-${p.id}-${ci}" type="number" min="0" max="100" step="1" value="${cw[ci]}" data-p="${p.id}" data-k="cw" data-i="${ci}" aria-label="${esc(cn)} weight %">`:""}</td>
+        <td class="${removed?'rem':''}">${esc(subName)}</td>
+        <td class="num"><input class="w ${swChanged?'chg':''}" id="sw-${p.id}-${si}" type="number" min="0" max="100" step="1" value="${sw[si]}" data-p="${p.id}" data-k="sw" data-i="${si}" aria-label="${esc(SUBS[si])} sub-weight %"></td>
+        ${conds.join("")}</tr>`;
+    });
+  });
+  const tot=cw.reduce((a,b)=>a+b,0);
+  return `<div class="scroll"><table class="matrix"><thead><tr><th>Criteria</th><th class="num">Weight %</th><th>Sub-criterion</th><th class="num">Sub-weight %</th><th>1 (Low)</th><th>2 (Medium)</th><th>3 (High)</th></tr></thead><tbody>${rows}
+  <tr><td><b>Total</b></td><td class="num"><span class="wtot ${tot!==100?'bad':''}">${tot}%</span></td><td colspan="5" class="note">${tot!==100?"Criterion weights must add up to 100%.":"Blue text = changed versus the current methodology. Weight changes are for your own testing on this screen and are not saved for others."}</td></tr></tbody></table></div>`;
+}
+function resultsHtml(p){
+  const ms=allModels().filter(complete); const cur=PROPS[0];
+  const counts={1:0,2:0,3:0};
+  const rows=ms.map(m=>{
+    const r=calc(p,m), t=tierOf(r.score), t0=tierOf(calc(cur,m).score); counts[t]++;
+    const mv=p.id==="cur"?"":(t<t0?`<span class="mv up">↑ stricter</span>`:t>t0?`<span class="mv down">↓ lighter</span>`:`<span class="mv eq">no change</span>`);
+    return `<tr class="${m.mine?'mine':''}"><td class="co">${esc(m.co||"—")}</td><td>${esc(m.name)}${m.edited?' <span class="pill">changed</span>':''}</td>${r.crit.map(c=>`<td class="num">${c.toFixed(2)}</td>`).join("")}<td class="num"><b>${r.score.toFixed(2)}</b></td><td class="num">${tierHtml(t)}</td>${p.id==="cur"?"":`<td>${mv}</td>`}</tr>`;
+  }).join("");
+  return `<div class="counts">${[1,2,3].map(t=>`<div class="count">${tierHtml(t)}<b>${counts[t]}</b><span class="note">models</span></div>`).join("")}</div>
+  <div class="scroll"><table><thead><tr><th>Company</th><th>Model / use case</th><th class="num">Materiality</th><th class="num">Compl. &amp; Design</th><th class="num">Uncertainty</th><th class="num">Reputational</th><th class="num">Score</th><th class="num">Tier</th>${p.id==="cur"?"":"<th>vs current</th>"}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function proposalHtml(p){
+  return `<section class="panel" role="tabpanel" aria-labelledby="tab-${p.id}">
+   <div class="desc"><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><h2>${esc(p.name)}</h2><p class="lead">${esc(p.desc)}</p></div>
+   <div class="toolbar">${p.rec?'<span class="pill red">Recommended</span>':''}<button class="mini" data-reset="${p.id}">Reset weights</button></div></div>
+   <h3>Scoring matrix</h3>${matrixHtml(p)}
+   <h3>Calculator — tier of each model under this option</h3>${resultsHtml(p)}
+   <p class="note">Scores come from the Models tab. Rows in blue are added models; "changed" marks listed models whose scores were changed. ${p.ref?"System Access uses the refined (criticality-based) condition.":"System Access uses the current condition text."}</p></section>`;
+}
+let pendingDel=null, barMsg="";
+function modelsHtml(){
+  const ms=allModels();
+  const sel=(m,i)=>{const b=BASE.find(x=>x.id===m.id); const ed=b&&m.edited&&b.s[i]!==m.s[i];
+    return `<select class="sc ${ed?'edited':''}" id="sc-${m.id}-${i}" data-m="${m.id}" data-i="${i}" aria-label="${esc(m.name)} ${esc(SUBS[i])}">${m.s[i]==null?'<option value="">–</option>':''}${[1,2,3].map(v=>`<option value="${v}" ${m.s[i]===v?'selected':''}>${v}</option>`).join("")}</select>`;};
+  const rows=ms.map(m=>`<tr class="${m.mine?'mine':''}">
+    <td>${m.mine?`<input class="txt" id="co-${m.id}" data-m="${m.id}" data-f="co" value="${esc(m.co)}" placeholder="Company" aria-label="Company">`:`<span class="co">${esc(m.co)}</span>`}</td>
+    <td>${m.mine?`<input class="txt" id="nm-${m.id}" data-m="${m.id}" data-f="name" value="${esc(m.name)}" placeholder="Model name" aria-label="Model name">`:esc(m.name)}</td>
+    ${SUBS.map((_,i)=>`<td class="num">${sel(m,i)}</td>`).join("")}
+    <td>${m.mine?(pendingDel===m.id?`<button class="mini" data-delok="${m.id}">Confirm remove</button> <button class="mini" data-delno="1">Keep</button>`:`<button class="mini" data-del="${m.id}">Remove</button>`):(m.edited?`<button class="mini" data-undo="${m.id}">Restore original</button>`:"")}</td></tr>`).join("");
+  return `<section class="panel" role="tabpanel" aria-labelledby="tab-models">
+   <div class="desc"><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><h2>Models</h2><p class="lead">Add a model, give it a company and a name, and score each sub-criterion: 1 = Low, 2 = Medium, 3 = High (see the matrix on each proposal tab). System Access: 1 = no access or read-only, 2 = writes to a non-critical business system, 3 = writes to a critical system. Changes are saved automatically for everyone.</p></div>
+   <div class="toolbar"><button class="btn" id="add">Add a model</button></div></div>
+   <div class="scroll"><table><thead><tr><th>Company</th><th>Model / use case</th>${SHORT.map(s=>`<th class="num">${s}</th>`).join("")}<th></th></tr></thead><tbody>${rows}</tbody></table></div>
+   <p class="note">A model appears in the calculators once all ten scores are filled in.</p></section>`;
+}
+function summaryHtml(){
+  const ms=allModels().filter(complete);
+  const counts=PROPS.map(()=>({1:0,2:0,3:0}));
+  const rows=ms.map(m=>`<tr class="${m.mine?'mine':''}"><td class="co">${esc(m.co||"—")}</td><td>${esc(m.name)}</td>${PROPS.map((p,k)=>{const t=tierOf(calc(p,m).score); counts[k][t]++; return `<td class="num">${tierHtml(t)}</td>`;}).join("")}</tr>`).join("");
+  const cnt=[1,2,3].map(t=>`<tr><td></td><td><b>Number in Tier ${t}</b></td>${counts.map(c=>`<td class="num"><b>${c[t]}</b></td>`).join("")}</tr>`).join("");
+  return `<section class="panel" role="tabpanel" aria-labelledby="tab-summary"><h2>Summary — tier of each model under each option</h2>
+   <div class="scroll"><table><thead><tr><th>Company</th><th>Model / use case</th>${PROPS.map(p=>`<th class="num">${esc(p.tab)}</th>`).join("")}</tr></thead><tbody>${rows}${cnt}</tbody></table></div></section>`;
+}
+function fmtTime(iso){try{return new Date(iso).toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(e){return iso;}}
+function logHtml(){
+  const rows=saved.log.map(l=>`<tr><td class="co">${esc(fmtTime(l.at))}</td><td>${esc(l.by||"—")}</td><td>${esc(l.model)}</td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join("");
+  return `<section class="panel" role="tabpanel" aria-labelledby="tab-log"><h2>Change log</h2><p class="lead">Every change to the models: when, who, which model and what changed. Newest first.</p>
+   <details class="imp"><summary><b>Import changes sent by a colleague</b> (page owner)</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><textarea id="impcode" rows="3" placeholder="Paste the TIERING:… code here" style="width:100%;font-family:monospace;font-size:12px"></textarea><span><button class="btn" id="impbtn">Import</button> <span class="note" id="impmsg" role="status"></span></span></div></details>
+   ${saved.log.length?`<div class="scroll"><table><thead><tr><th>When</th><th>Who</th><th>Model</th><th>Action</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="note">No saved changes yet. Changes saved from the Models tab will appear here.</p>'}</section>`;
+}
+function render(){
+  const a=document.activeElement, focusId=a&&a.id, sel=(a&&a.selectionStart!=null)?a.selectionStart:null;
+  renderTabs(); renderSavebar();
+  const p=PROPS.find(x=>x.id===tab);
+  document.getElementById("main").innerHTML=p?proposalHtml(p):(tab==="models"?modelsHtml():tab==="log"?logHtml():summaryHtml());
+  if(focusId){const el=document.getElementById(focusId); if(el){el.focus(); try{if(sel!=null) el.setSelectionRange(sel,sel);}catch(e){}}}
+}
+const main=document.getElementById("main");
+main.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.matches("input.w")){
+    const p=PROPS.find(x=>x.id===t.dataset.p); const w=weightsOf(p); const v=Math.max(0,Math.min(100,Number(t.value)||0));
+    w[t.dataset.k][Number(t.dataset.i)]=v; weights[p.id]=w; try{localStorage.setItem("tier_weights",JSON.stringify(weights))}catch(e){} render();
+  } else if(t.matches("select.sc")){
+    const id=t.dataset.m, i=Number(t.dataset.i), v=t.value===""?null:Number(t.value);
+    const m=allModels().find(x=>x.id===id); if(!m) return; const old=m.s[i]; if(old===v) return;
+    const s=m.s.slice(); s[i]=v; const detail=`${SUBS[i]}: ${old==null?"–":old} → ${v==null?"–":v}`;
+    if(m.mine){work.models[id]={...work.models[id],s}; note(m.name,"Score changed",detail);}
+    else {const a4=i===4?v:m.a4; work.edits[id]={s,a4}; note(m.name,"Score changed",detail);}
+    render();
+  } else if(t.matches("input.txt[data-m]")){
+    const id=t.dataset.m, f=t.dataset.f; const d=work.models[id]; if(!d) return;
+    const val=t.value.trim().slice(0,120); const old=String(d[f]||""); if(val===old) return;
+    work.models[id]={...d,[f]:val}; note(f==="name"?(val||old):(d.name||""),f==="name"?"Renamed":"Company changed",`"${old||"–"}" → "${val||"–"}"`); render();
+  }
+});
+main.addEventListener("click",e=>{
+  const t=e.target.closest("button"); if(!t) return;
+  if(t.dataset.reset){delete weights[t.dataset.reset]; try{localStorage.setItem("tier_weights",JSON.stringify(weights))}catch(e){} render(); return;}
+  if(t.id==="add"){const id="m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    work.models[id]={co:"",name:"New model",s:Array(10).fill(null),createdAt:nowIso()}; note("New model","Added","New model row created"); render();
+    const el=document.getElementById("nm-"+id); if(el){el.focus(); el.select();}}
+  else if(t.dataset.del){pendingDel=t.dataset.del; render();}
+  else if(t.dataset.delno){pendingDel=null; render();}
+  else if(t.dataset.delok){const id=t.dataset.delok; const d=work.models[id]; pendingDel=null; delete work.models[id];
+    note(d?.name||"Model","Removed",`Scores: ${validS(d?.s).map(v=>v??"–").join(" / ")}`); render();}
+  else if(t.id==="impbtn"){const msgEl=document.getElementById("impmsg");
+    try{const raw=document.getElementById("impcode").value.trim(); if(!raw.startsWith("TIERING:")) throw 0;
+      const pkg=JSON.parse(decodeURIComponent(escape(atob(raw.slice(8))))); const by=String(pkg.by||"Unknown").slice(0,80);
+      Object.entries(pkg.models||{}).forEach(([id,d])=>{if(!/^m[a-z0-9]+$/.test(id)) return; if(d==null) delete work.models[id]; else work.models[id]={co:String(d.co||"").slice(0,120),name:String(d.name||"Unnamed model").slice(0,120),s:validS(d.s),createdAt:String(d.createdAt||nowIso())};});
+      Object.entries(pkg.edits||{}).forEach(([id,e])=>{if(!BASE.some(b=>b.id===id)) return; if(e==null) delete work.edits[id]; else work.edits[id]={s:validS(e.s),a4:(e.a4===1||e.a4===2||e.a4===3)?e.a4:BASE.find(b=>b.id===id).a4};});
+      (Array.isArray(pkg.log)?pkg.log:[]).slice(0,200).forEach(x=>pending.push({at:String(x.at||nowIso()),model:String(x.model||"").slice(0,120),action:String(x.action||"").slice(0,60),detail:String(x.detail||"").slice(0,300),by}));
+      keepDraft(); barMsg=`Imported changes from ${by}. Press "Save changes" to save them for everyone.`; render(); window.scrollTo({top:0,behavior:"smooth"});
+    }catch(_){msgEl.textContent="This code could not be read. Ask your colleague to copy it again in full.";}}
+  else if(t.dataset.undo){const id=t.dataset.undo; const b=BASE.find(x=>x.id===id); delete work.edits[id]; note(b.name,"Restored","Scores restored to the original values"); render();}
+});
+const bar=document.getElementById("savebar");
+bar.addEventListener("input",e=>{if(e.target.id==="myname"){myName=e.target.value.slice(0,80); try{localStorage.setItem("tier_name",myName)}catch(_){} if(pending.length){barMsg=""; renderSavebar(); clearTimeout(saveTimer); saveTimer=setTimeout(autoSave,1500);}}});
+bar.addEventListener("click",async e=>{
+  const t=e.target.closest("button"); if(!t) return;
+  if(t.id==="discard"){work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); pending=[]; clearDraft(); barMsg=""; setSave(""); render(); return;}
+  if(t.id==="sendbtn"){
+    if(!myName.trim()){setSave("Enter your name first, so the change log shows who made the change."); const n=document.getElementById("myname"); if(n) n.focus(); return;}
+    const dm={},de={};
+    new Set([...Object.keys(saved.models),...Object.keys(work.models)]).forEach(id=>{if(JSON.stringify(saved.models[id])!==JSON.stringify(work.models[id])) dm[id]=work.models[id]??null;});
+    new Set([...Object.keys(saved.edits),...Object.keys(work.edits)]).forEach(id=>{if(JSON.stringify(saved.edits[id])!==JSON.stringify(work.edits[id])) de[id]=work.edits[id]??null;});
+    const pkg={v:1,by:myName.trim(),models:dm,edits:de,log:pending};
+    const code="TIERING:"+btoa(unescape(encodeURIComponent(JSON.stringify(pkg))));
+    document.getElementById("sendcode").value=code; document.getElementById("sendwrap").hidden=false; return;}
+  if(t.id==="copybtn"){const ta=document.getElementById("sendcode"); ta.select();
+    let ok=false; try{await navigator.clipboard.writeText(ta.value); ok=true;}catch(_){try{ok=document.execCommand("copy");}catch(__){}}
+    setSave(ok?"Code copied — paste it into a message to the page owner.":"Select the code in the box and copy it (Ctrl/Cmd + C)."); return;}
+  if(t.id==="savebtn"){
+    if(!myName.trim()){setSave("Enter your name before saving, so the change log shows who made the change."); const n=document.getElementById("myname"); if(n) n.focus(); return;}
+    if(window.storage){
+      const by=myName.trim(); saving=true; render();
+      try{
+        const dm={},de={};
+        new Set([...Object.keys(saved.models),...Object.keys(work.models)]).forEach(id=>{if(JSON.stringify(saved.models[id])!==JSON.stringify(work.models[id])) dm[id]=work.models[id]??null;});
+        new Set([...Object.keys(saved.edits),...Object.keys(work.edits)]).forEach(id=>{if(JSON.stringify(saved.edits[id])!==JSON.stringify(work.edits[id])) de[id]=work.edits[id]??null;});
+        const latest=(await readShared())||saved;
+        Object.entries(dm).forEach(([id,d])=>{if(d==null) delete latest.models[id]; else latest.models[id]=d;});
+        Object.entries(de).forEach(([id,e])=>{if(e==null) delete latest.edits[id]; else latest.edits[id]=e;});
+        latest.log=pending.slice().reverse().map(x=>({...x,by:x.by||by})).concat(latest.log).slice(0,1000);
+        await window.storage.set(KEY,JSON.stringify(latest),true);
+        saved=latest; work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); pending=[]; clearDraft(); saving=false;
+        setSave("Saved — everyone opening this page now sees your changes."); render();
+      }catch(err){saving=false; keepDraft(); setSave("Could not save just now. Your changes are still here — try again in a moment."); render();}
+      return;
+    }
+    if(!artifactApi){canSave=false; setSave("You can view this page but not save to it directly. Press \"Send my changes to the owner\" to pass your changes on."); return;}
+    const by=myName.trim();
+    const next={models:work.models,edits:work.edits,log:pending.slice().reverse().map(x=>({...x,by:x.by||by})).concat(saved.log).slice(0,1000)};
+    saving=true; render();
+    try{ clearDraft(); await artifactApi.publish(buildDoc(next)); setSave("Saved. The page is reloading with your changes."); }
+    catch(err){ saving=false; keepDraft();
+      const c=err&&err.code;
+      if(c==="not_writer"||c==="not_granted"){canSave=false; setSave("You can view this page but not save to it directly. Press \"Send my changes to the owner\" to pass your changes on.");}
+      else if(c==="conflict"){setSave("Someone else saved at the same moment, so the page reloads with their version. Please make your change again.");}
+      else setSave("Could not save just now. Your changes are still here — try again in a moment.");
+      render(); }
+  }
+});
+function buildDoc(state){
+  const json=JSON.stringify(state).replace(/</g,"\\u003c");
+  const SC="<"+"/script>";
+  return "<!doctype html><html><head><meta charset=utf8><meta name=viewport content=\"width=device-width,initial-scale=1,viewport-fit=cover\"><style>"+CAP.reset+"</style></head><body>"
+    +CAP.title+"\n"+CAP.fit+"\n"+CAP.font+"\n<style id=\"pagecss\">"+CAP.css+"</style>\n\n"+CAP.app+"\n\n<script type=\"application/json\" id=\"shared\">"+json+SC+"\n<script id=\"appjs\">"+CAP.js+SC+"\n</body></html>";
+}
+function setSave(t){barMsg=t; document.getElementById("save").textContent=t; renderSavebar();}
+function banner(t){const b=document.getElementById("banner"); b.textContent=t; b.hidden=!t;}
+const KEY="tiering_state_v1";
+async function readShared(){
+  try{const r=await window.storage.get(KEY,true); if(r&&r.value){const j=JSON.parse(r.value); return {models:j.models||{},edits:j.edits||{},log:Array.isArray(j.log)?j.log:[]};}}catch(e){}
+  return null;}
+async function refreshShared(){
+  if(!window.storage||saving) return; const j=await readShared(); if(!j) return;
+  saved=j; if(!pending.length) work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); render();}
+render();
+if(pending.length) scheduleSave();
+if(window.storage){document.head.insertAdjacentHTML("beforeend","<style>details.imp{display:none}</style>");refreshShared(); setInterval(refreshShared,20000); document.addEventListener("visibilitychange",()=>{if(!document.hidden) refreshShared();});}
+(async()=>{
+  if(window.storage||!window.claude?.use) return;
+  try{const a=await claude.use("artifact"); if(a) artifactApi=a;}catch(e){}
+  render();
+})();
+</script>
+</body></html>
