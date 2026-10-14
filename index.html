@@ -130,10 +130,9 @@ const REF=[["< 10% of the business-line total (owner proposes, MRM approves)","1
 const BSW=[80,20,20,40,40,40,60,25,25,50];
 const PROPS=[
  {id:"cur",tab:"Current (v4)",name:"Current methodology (v4)",desc:"The methodology as it stands today — the reference for every proposal.",cw:[20,45,10,25],sw:BSW,ref:false,rem:false},
- {id:"p1",tab:"Proposal 1",name:"Proposal 1 — Reweighting of criteria",desc:"Weights move from Complexity & Design (45% → 35%) and Uncertainty (10% → 5%) to Reputational Risk (25% → 40%). Scoring conditions unchanged.",cw:[20,35,5,40],sw:BSW,ref:false,rem:false},
- {id:"p2",tab:"Proposal 2",name:"Proposal 2 — Reweighting and refined scoring conditions",desc:"Complexity & Design 40%, Reputational Risk 35%, Materiality 20%, Uncertainty 5%. Scoring conditions refined; System Access graded by the criticality of the system written to.",cw:[20,40,5,35],sw:BSW,ref:true,rem:false,rec:true},
- {id:"p4",tab:"Proposal 3",name:"Proposal 3 — Impact-weighted approach",desc:"Materiality 15%, Complexity & Design 35%, Uncertainty 5%, Reputational Risk 45%. Same refined conditions as Proposal 2.",cw:[15,35,5,45],sw:BSW,ref:true,rem:false},
- {id:"p5",tab:"Proposal 4",name:"Proposal 4 — Birmarket proposal",desc:"Deployment & Dependency, Output Variability and Backtest removed. Complexity & Design 30% (Data 50%, Access 50%), Uncertainty 0%, Reputational Risk 50%. Refined conditions.",cw:[20,30,0,50],sw:[80,20,0,50,50,40,60,25,25,50],ref:true,rem:true}];
+ {id:"p1",tab:"Proposal 1",name:"Proposal 1 — Reweighting and refined scoring conditions",desc:"Materiality 30%, Complexity & Design 35%, Reputational Risk 35%, Uncertainty 0%. Same refined conditions as Proposal 2.",cw:[30,35,0,35],sw:BSW,ref:true,rem:false},
+ {id:"p2",tab:"Proposal 2",name:"Proposal 2 — Reweighting and refined scoring conditions",desc:"Complexity & Design 40%, Reputational Risk 30%, Materiality 20%, Uncertainty 10%. Scoring conditions refined; System Access graded by the criticality of the system written to.",cw:[20,40,10,30],sw:BSW,ref:true,rem:false,rec:true},
+ {id:"p4",tab:"Proposal 3",name:"Proposal 3 — Balanced two-driver approach",desc:"Materiality 20%, Complexity & Design 40%, Reputational Risk 40%, Uncertainty 0%. Same refined conditions as Proposal 2.",cw:[20,40,0,40],sw:BSW,ref:true,rem:false}];
 // s = sub-criterion scores (System Access scored on the refined text); a4 = System Access under the current text (used by Current and Proposal 1)
 const BASE=[
  ["b1","Fintech","Customer Service FAQ Chatbot",[3,3,3,3,2,2,1,3,3,3],2],["b2","Fintech","AI Evaluator",[1,2,3,2,1,2,1,1,1,1],1],
@@ -158,7 +157,7 @@ let work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits}));
 let pending=[];
 let weights={}, tab="p2", artifactApi=null, canSave=null, saving=false, myName="";
 try{const t=localStorage.getItem("tier_tab"); if(t) tab=t;}catch(e){}
-try{const w=JSON.parse(localStorage.getItem("tier_weights")||"{}"); if(w&&typeof w==="object") weights=w;}catch(e){}
+try{const w=JSON.parse(localStorage.getItem("tier_weights_v2")||"{}"); if(w&&typeof w==="object") weights=w;}catch(e){}
 try{myName=localStorage.getItem("tier_name")||"";}catch(e){}
 try{const d=JSON.parse(localStorage.getItem("tier_draft")||"null"); if(d&&d.base===JSON.stringify(saved.log[0]||null)){work=d.work; pending=d.pending||[];}}catch(e){}
 
@@ -309,7 +308,7 @@ main.addEventListener("change",e=>{
   const t=e.target;
   if(t.matches("input.w")){
     const p=PROPS.find(x=>x.id===t.dataset.p); const w=weightsOf(p); const v=Math.max(0,Math.min(100,Number(t.value)||0));
-    w[t.dataset.k][Number(t.dataset.i)]=v; weights[p.id]=w; try{localStorage.setItem("tier_weights",JSON.stringify(weights))}catch(e){} render();
+    w[t.dataset.k][Number(t.dataset.i)]=v; weights[p.id]=w; try{localStorage.setItem("tier_weights_v2",JSON.stringify(weights))}catch(e){} render();
   } else if(t.matches("select.sc")){
     const id=t.dataset.m, i=Number(t.dataset.i), v=t.value===""?null:Number(t.value);
     const m=allModels().find(x=>x.id===id); if(!m) return; const old=m.s[i]; if(old===v) return;
@@ -325,7 +324,7 @@ main.addEventListener("change",e=>{
 });
 main.addEventListener("click",e=>{
   const t=e.target.closest("button"); if(!t) return;
-  if(t.dataset.reset){delete weights[t.dataset.reset]; try{localStorage.setItem("tier_weights",JSON.stringify(weights))}catch(e){} render(); return;}
+  if(t.dataset.reset){delete weights[t.dataset.reset]; try{localStorage.setItem("tier_weights_v2",JSON.stringify(weights))}catch(e){} render(); return;}
   if(t.id==="add"){const id="m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     work.models[id]={co:"",name:"New model",s:Array(10).fill(null),createdAt:nowIso()}; note("New model","Added","New model row created"); render();
     const el=document.getElementById("nm-"+id); if(el){el.focus(); el.select();}}
