@@ -150,6 +150,7 @@ const CAP={title:document.getElementById("pagetitle").outerHTML, fit:document.ge
   reset:([...document.head.querySelectorAll("style")].find(s=>s.textContent.includes("[hidden]"))||{textContent:""}).textContent};
 let saved={models:{},edits:{},log:[]};
 try{const j=JSON.parse(document.getElementById("shared").textContent); if(j&&typeof j==="object") saved={models:j.models||{},edits:j.edits||{},log:Array.isArray(j.log)?j.log:[]};}catch(e){}
+try{const c=JSON.parse(localStorage.getItem("tier_shared_cache")||"null"); if(c&&typeof c==="object"&&c.models&&Object.keys(c.models).length) saved={models:c.models,edits:c.edits||{},log:Array.isArray(c.log)?c.log:[]};}catch(e){}
 let work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits}));
 let pending=[];
 let weights={}, tab="p2", artifactApi=null, canSave=null, saving=false, myName="";
@@ -411,10 +412,12 @@ function setSave(t){barMsg=t; document.getElementById("save").textContent=t; ren
 function banner(t){const b=document.getElementById("banner"); b.textContent=t; b.hidden=!t;}
 const KEY="tiering_state_v1";
 async function readShared(){
-  try{const r=await window.storage.get(KEY,true); if(r&&r.value){const j=JSON.parse(r.value); return {models:j.models||{},edits:j.edits||{},log:Array.isArray(j.log)?j.log:[]};}}catch(e){}
+  try{const r=await window.storage.get(KEY,true); if(r&&r.value){const j=JSON.parse(r.value); const out={models:j.models||{},edits:j.edits||{},log:Array.isArray(j.log)?j.log:[]}; try{localStorage.setItem("tier_shared_cache",JSON.stringify(out))}catch(_){} return out;}}catch(e){}
   return null;}
 async function refreshShared(){
-  if(!window.storage||saving) return; const j=await readShared(); if(!j) return;
+  if(!window.storage||saving) return; const j=await readShared();
+  if(!j){banner("Could not load the latest shared data — showing the last copy this browser has. Retrying automatically; please do not re-add models."); return;}
+  banner("");
   saved=j; if(draftData&&!pending.length) restoreDraft(); else if(!pending.length) work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); render();}
 render();
 if(pending.length) scheduleSave();
