@@ -205,21 +205,38 @@
     2
    ]
   },
-  "mmv9akq04p6uc": {
-   "co": "",
-   "createdAt": "2026-10-15T08:43:41.092Z",
-   "name": "New model",
+  "mmv9ntwcnabd0": {
+   "co": "Birmarket",
+   "createdAt": "2026-10-15T14:54:44.231Z",
+   "name": "AI Shopping Assistant",
    "s": [
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
+    1,
+    3,
+    2,
+    1,
+    1,
+    2,
+    1,
+    3,
+    1,
+    1
+   ]
+  },
+  "mmv9nzgluectk": {
+   "co": "Birmarket",
+   "createdAt": "2026-10-15T14:59:03.762Z",
+   "name": "AI telesales lead optimization",
+   "s": [
+    1,
+    2,
+    3,
+    1,
+    2,
+    2,
+    1,
+    3,
+    1,
+    2
    ]
   }
  }
