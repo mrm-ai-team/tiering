@@ -157,7 +157,7 @@ let weights={}, tab="p2", artifactApi=null, canSave=null, saving=false, myName="
 try{const t=localStorage.getItem("tier_tab"); if(t) tab=t;}catch(e){}
 try{const w=JSON.parse(localStorage.getItem("tier_weights_v2")||"{}"); if(w&&typeof w==="object") weights=w;}catch(e){}
 try{myName=localStorage.getItem("tier_name")||"";}catch(e){}
-let draftData=null;
+let draftData=null, liveLoaded=false;
 try{const d=JSON.parse(localStorage.getItem("tier_draft_v2")||"null"); if(d&&d.delta&&Array.isArray(d.pending)&&d.pending.length) draftData=d;}catch(e){}
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -414,14 +414,19 @@ const KEY="tiering_state_v1";
 async function readShared(){
   try{const r=await window.storage.get(KEY,true); if(r&&r.value){const j=JSON.parse(r.value); const out={models:j.models||{},edits:j.edits||{},log:Array.isArray(j.log)?j.log:[]}; try{localStorage.setItem("tier_shared_cache",JSON.stringify(out))}catch(_){} return out;}}catch(e){}
   return null;}
+async function loadSnapshot(){ // data.json: a recent copy of the shared models, served fast by GitHub Pages
+  try{const r=await fetch("data.json?t="+Math.floor(Date.now()/60000),{cache:"no-store"}); if(!r.ok) return; const j=await r.json();
+    if(liveLoaded||saving||pending.length||!j||typeof j.models!=="object") return;
+    saved={models:j.models||{},edits:j.edits||{},log:saved.log}; work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits}));
+    if(draftData) restoreDraft(); render();}catch(e){}}
 async function refreshShared(){
   if(!window.storage||saving) return; const j=await readShared();
   if(!j){banner("Could not load the latest shared data — showing the last copy this browser has. Retrying automatically; please do not re-add models."); return;}
-  banner("");
+  banner(""); liveLoaded=true;
   saved=j; if(draftData&&!pending.length) restoreDraft(); else if(!pending.length) work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); render();}
 render();
 if(pending.length) scheduleSave();
-if(window.storage){document.head.insertAdjacentHTML("beforeend","<style>details.imp{display:none}</style>");refreshShared(); setInterval(refreshShared,20000); document.addEventListener("visibilitychange",()=>{if(!document.hidden) refreshShared();});}
+if(window.storage){document.head.insertAdjacentHTML("beforeend","<style>details.imp{display:none}</style>");loadSnapshot();refreshShared(); setInterval(refreshShared,20000); document.addEventListener("visibilitychange",()=>{if(!document.hidden) refreshShared();});}
 (async()=>{
   if(window.storage||!window.claude?.use) return;
   try{const a=await claude.use("artifact"); if(a) artifactApi=a;}catch(e){}

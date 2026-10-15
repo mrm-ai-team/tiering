@@ -1,0 +1,50 @@
+name: Refresh data snapshot
+
+# Copies the shared models and score edits into data.json so the site can show them
+# immediately, without waiting for the slow Google Apps Script. The change log (which
+# contains names) is NOT copied — this repository is public.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch shared data
+        run: |
+          API=$(grep -o 'https://script.google.com[^"]*' index.html | head -1)
+          ok=0
+          for i in 1 2 3 4; do
+            if curl -sSL --max-time 150 "$API?api=get&t=$(date +%s)" -o live.json && python3 -c "import json;j=json.load(open('live.json'));assert isinstance(j.get('models'),dict) and isinstance(j.get('edits'),dict)"; then ok=1; break; fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then echo "Could not read shared data; keeping the previous snapshot."; exit 0; fi
+          python3 - <<'PY'
+          import json
+          j = json.load(open("live.json"))
+          models = {k: {f: m.get(f) for f in ("co", "name", "s", "createdAt")} for k, m in j["models"].items()}
+          edits = {k: {f: e.get(f) for f in ("s", "a4")} for k, e in j["edits"].items()}
+          json.dump({"models": models, "edits": edits}, open("data.json", "w"), ensure_ascii=False, sort_keys=True, indent=1)
+          PY
+          rm -f live.json
+
+      - name: Commit if changed
+        run: |
+          if [ -z "$(git status --porcelain data.json)" ]; then echo "No change."; exit 0; fi
+          git config user.name "snapshot-bot"
+          git config user.email "snapshot-bot@users.noreply.github.com"
+          git add data.json
+          git commit -m "Refresh data snapshot"
+          git push
