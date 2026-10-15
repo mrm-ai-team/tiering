@@ -156,7 +156,8 @@ let weights={}, tab="p2", artifactApi=null, canSave=null, saving=false, myName="
 try{const t=localStorage.getItem("tier_tab"); if(t) tab=t;}catch(e){}
 try{const w=JSON.parse(localStorage.getItem("tier_weights_v2")||"{}"); if(w&&typeof w==="object") weights=w;}catch(e){}
 try{myName=localStorage.getItem("tier_name")||"";}catch(e){}
-try{const d=JSON.parse(localStorage.getItem("tier_draft")||"null"); if(d&&d.base===JSON.stringify(saved.log[0]||null)){work=d.work; pending=d.pending||[];}}catch(e){}
+let draftData=null;
+try{const d=JSON.parse(localStorage.getItem("tier_draft_v2")||"null"); if(d&&d.delta&&Array.isArray(d.pending)&&d.pending.length) draftData=d;}catch(e){}
 
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const nowIso=()=>new Date().toISOString();
@@ -177,8 +178,20 @@ function calc(p,m){
 function tierOf(score){const r=Math.round(score*1e6)/1e6; return r<1.5?3:(r<=2?2:1);}
 const tierHtml=t=>`<span class="tier t${t}">Tier ${t}</span>`;
 function note(model,action,detail){pending.push({at:nowIso(),model,action,detail}); keepDraft(); barMsg=""; scheduleSave();}
-function keepDraft(){try{localStorage.setItem("tier_draft",JSON.stringify({base:JSON.stringify(saved.log[0]||null),work,pending}))}catch(e){}}
-function clearDraft(){try{localStorage.removeItem("tier_draft")}catch(e){}}
+function hasLog(log,x){return log.some(l=>l.at===x.at&&l.model===x.model&&l.action===x.action);}
+function diffWork(){ // what differs between the last shared copy and the local working copy
+  const dm={},de={};
+  new Set([...Object.keys(saved.models),...Object.keys(work.models)]).forEach(id=>{if(JSON.stringify(saved.models[id])!==JSON.stringify(work.models[id])) dm[id]=work.models[id]??null;});
+  new Set([...Object.keys(saved.edits),...Object.keys(work.edits)]).forEach(id=>{if(JSON.stringify(saved.edits[id])!==JSON.stringify(work.edits[id])) de[id]=work.edits[id]??null;});
+  return {dm,de};}
+function keepDraft(){try{localStorage.setItem("tier_draft_v2",JSON.stringify({delta:diffWork(),pending}))}catch(e){}}
+function clearDraft(){try{localStorage.removeItem("tier_draft_v2")}catch(e){}}
+function restoreDraft(){ // re-apply unsaved changes from an earlier visit on top of the freshest shared data
+  const d=draftData; draftData=null; if(!d) return;
+  work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits}));
+  Object.entries(d.delta.dm||{}).forEach(([id,v])=>{if(v==null) delete work.models[id]; else work.models[id]=v;});
+  Object.entries(d.delta.de||{}).forEach(([id,v])=>{if(v==null) delete work.edits[id]; else work.edits[id]=v;});
+  pending=d.pending; scheduleSave();}
 
 function renderTabs(){
   const names=PROPS.map(p=>[p.id,p.tab,p.rec]).concat([["models","Models"],["summary","Summary"],["log","Change log"]]);
@@ -208,11 +221,12 @@ async function autoSave(){
     const dm={},de={};
     new Set([...Object.keys(saved.models),...Object.keys(snap.models)]).forEach(id=>{if(JSON.stringify(saved.models[id])!==JSON.stringify(snap.models[id])) dm[id]=snap.models[id]??null;});
     new Set([...Object.keys(saved.edits),...Object.keys(snap.edits)]).forEach(id=>{if(JSON.stringify(saved.edits[id])!==JSON.stringify(snap.edits[id])) de[id]=snap.edits[id]??null;});
-    const latest=(await readShared())||saved;
+    const latest=await readShared(); if(!latest) throw new Error("could not read the latest shared data");
     Object.entries(dm).forEach(([id,d])=>{if(d==null) delete latest.models[id]; else latest.models[id]=d;});
     Object.entries(de).forEach(([id,e])=>{if(e==null) delete latest.edits[id]; else latest.edits[id]=e;});
-    latest.log=batch.slice().reverse().map(x=>({...x,by:x.by||by})).concat(latest.log).slice(0,1000);
+    latest.log=batch.slice().reverse().filter(x=>!hasLog(latest.log,x)).map(x=>({...x,by:x.by||by})).concat(latest.log).slice(0,1000);
     await window.storage.set(KEY,JSON.stringify(latest),true);
+    const chk=await readShared(); if(chk&&!batch.every(x=>hasLog(chk.log,x))) throw new Error("another save overwrote this one");
     saved=latest; pending=pending.slice(batch.length);
     if(!pending.length){work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); clearDraft();} else keepDraft();
     saving=false; barMsg="Saved ✓ "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); render();
@@ -363,11 +377,12 @@ bar.addEventListener("click",async e=>{
         const dm={},de={};
         new Set([...Object.keys(saved.models),...Object.keys(work.models)]).forEach(id=>{if(JSON.stringify(saved.models[id])!==JSON.stringify(work.models[id])) dm[id]=work.models[id]??null;});
         new Set([...Object.keys(saved.edits),...Object.keys(work.edits)]).forEach(id=>{if(JSON.stringify(saved.edits[id])!==JSON.stringify(work.edits[id])) de[id]=work.edits[id]??null;});
-        const latest=(await readShared())||saved;
+        const latest=await readShared(); if(!latest) throw new Error("could not read the latest shared data");
         Object.entries(dm).forEach(([id,d])=>{if(d==null) delete latest.models[id]; else latest.models[id]=d;});
         Object.entries(de).forEach(([id,e])=>{if(e==null) delete latest.edits[id]; else latest.edits[id]=e;});
-        latest.log=pending.slice().reverse().map(x=>({...x,by:x.by||by})).concat(latest.log).slice(0,1000);
+        latest.log=pending.slice().reverse().filter(x=>!hasLog(latest.log,x)).map(x=>({...x,by:x.by||by})).concat(latest.log).slice(0,1000);
         await window.storage.set(KEY,JSON.stringify(latest),true);
+        const chk=await readShared(); if(chk&&!pending.every(x=>hasLog(chk.log,x))) throw new Error("another save overwrote this one");
         saved=latest; work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); pending=[]; clearDraft(); saving=false;
         setSave("Saved — everyone opening this page now sees your changes."); render();
       }catch(err){saving=false; keepDraft(); setSave("Could not save just now. Your changes are still here — try again in a moment."); render();}
@@ -400,7 +415,7 @@ async function readShared(){
   return null;}
 async function refreshShared(){
   if(!window.storage||saving) return; const j=await readShared(); if(!j) return;
-  saved=j; if(!pending.length) work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); render();}
+  saved=j; if(draftData&&!pending.length) restoreDraft(); else if(!pending.length) work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); render();}
 render();
 if(pending.length) scheduleSave();
 if(window.storage){document.head.insertAdjacentHTML("beforeend","<style>details.imp{display:none}</style>");refreshShared(); setInterval(refreshShared,20000); document.addEventListener("visibilitychange",()=>{if(!document.hidden) refreshShared();});}
