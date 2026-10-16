@@ -34,8 +34,8 @@ jobs:
           python3 - <<'PY'
           import json
           j = json.load(open("live.json"))
-          models = {k: {f: m.get(f) for f in ("co", "name", "s", "createdAt")} for k, m in j["models"].items()}
-          edits = {k: {f: e.get(f) for f in ("s", "a4")} for k, e in j["edits"].items()}
+          models = {k: {f: m.get(f) for f in ("co", "name", "s", "au", "createdAt")} for k, m in j["models"].items()}
+          edits = {k: {f: e.get(f) for f in ("s", "au", "a4")} for k, e in j["edits"].items()}
           json.dump({"models": models, "edits": edits}, open("data.json", "w"), ensure_ascii=False, sort_keys=True, indent=1)
           PY
           rm -f live.json
