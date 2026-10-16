@@ -2,6 +2,7 @@
  "edits": {},
  "models": {
   "mmv98ypgutbox": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T07:58:34.350Z",
    "name": "AI Title Normalization",
@@ -19,6 +20,7 @@
    ]
   },
   "mmv994hy628o0": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:03:04.542Z",
    "name": "AI Attribute Suggestion",
@@ -36,6 +38,7 @@
    ]
   },
   "mmv99fjpoga67": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:11:40.044Z",
    "name": "AI Attribute Suggestion light",
@@ -53,6 +56,7 @@
    ]
   },
   "mmv99glx2w115": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:12:29.558Z",
    "name": "Content Category Prediction",
@@ -70,6 +74,7 @@
    ]
   },
   "mmv99jqd7ko5n": {
+   "au": 3,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:14:55.291Z",
    "name": "AI Review Approver",
@@ -87,6 +92,7 @@
    ]
   },
   "mmv99r0cz8nb0": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:20:34.835Z",
    "name": "Cold Start Recommendation",
@@ -104,6 +110,7 @@
    ]
   },
   "mmv99u5ljcaha": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:23:01.591Z",
    "name": "Personal Recommendation",
@@ -121,6 +128,7 @@
    ]
   },
   "mmv99xx64d3z2": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:25:57.292Z",
    "name": "Embedding Finetuning for Vector Search",
@@ -138,6 +146,7 @@
    ]
   },
   "mmv9a0n804q5y": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:28:04.368Z",
    "name": "Support FAQ ChatBot",
@@ -155,6 +164,7 @@
    ]
   },
   "mmv9a3a9joxr9": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:30:07.543Z",
    "name": "Support Calls Transcription (STT) Cloud",
@@ -172,6 +182,7 @@
    ]
   },
   "mmv9a9rhvib51": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:35:09.811Z",
    "name": "Support Calls Transcription (STT) Onprem",
@@ -189,6 +200,7 @@
    ]
   },
   "mmv9acpa52ihb": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T08:37:26.909Z",
    "name": "Buyer–Seller Chat AI Moderation",
@@ -206,6 +218,7 @@
    ]
   },
   "mmv9ntwcnabd0": {
+   "au": 1,
    "co": "Birmarket",
    "createdAt": "2026-10-15T14:54:44.231Z",
    "name": "AI Shopping Assistant",
@@ -223,6 +236,7 @@
    ]
   },
   "mmv9nzgluectk": {
+   "au": 3,
    "co": "Birmarket",
    "createdAt": "2026-10-15T14:59:03.762Z",
    "name": "AI telesales lead optimization",
