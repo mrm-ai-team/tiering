@@ -108,7 +108,7 @@ window.storage={
 <script id="appjs">
 const SUBS=["Share of business activity","GenAI usage cost","Deployment & Dependency","Data Sensitivity","System Access","Output Variability","Backtest possibility","Audience Type","Audience Reach","Harm","Autonomy Level"];
 const SHORT=["Share","Cost","Deploy.","Data","Access","Output var.","Backtest","Aud. type","Aud. reach","Harm","Autonomy"];
-const CRIT=[["Materiality",[0,1]],["Complexity & Design",[2,3,4,10]],["Uncertainty",[5,6]],["Reputational Risk",[7,8,9]]];
+const CRIT=[["Materiality",[0,1]],["Security & Data Access",[2,3,4,10]],["Uncertainty",[5,6]],["Reputational Risk",[7,8,9]]];
 const V4=[["< 10% of the selected reference measure","10%–30% of the selected reference measure","> 30% of the selected reference measure"],
 ["Low and predictable; effective caps and alerts (≤ $500/month)","Material or moderately variable; controls and limits in place (≤ $1,000/month)","High or highly variable; weak limits or significant overrun exposure (> $5,000/month)"],
 ["Internally developed and operated; dependencies fully controlled","Externally developed model deployed locally; configurable or fine-tunable","Proprietary third-party or externally hosted model with limited inspectability or control"],
@@ -132,9 +132,9 @@ const REF=[["< 10% of the business-line total (owner proposes, MRM approves)","1
 const BSW=[80,20,20,40,40,40,60,25,25,50,0]; // 11th = Autonomy Level (only used by Proposal 3)
 const PROPS=[
  {id:"cur",tab:"Current (v4)",name:"Current methodology (v4)",desc:"The methodology as it stands today — the reference for every proposal.",cw:[20,45,10,25],sw:BSW,ref:false,rem:false},
- {id:"p1",tab:"Proposal 1",name:"Proposal 1 — Reweighting and refined scoring conditions",desc:"Materiality 30%, Complexity & Design 35%, Reputational Risk 35%, Uncertainty 0%. Same refined conditions as Proposal 2.",cw:[30,35,0,35],sw:BSW,ref:true,rem:false},
- {id:"p2",tab:"Proposal 2",name:"Proposal 2 — Reweighting and refined scoring conditions",desc:"Complexity & Design 40%, Reputational Risk 30%, Materiality 20%, Uncertainty 10%. Scoring conditions refined; System Access graded by the criticality of the system written to.",cw:[20,40,10,30],sw:BSW,ref:true,rem:false,rec:true},
- {id:"p4",tab:"Proposal 3",name:"Proposal 3 — Proposal 2 with Autonomy Level",desc:"Same criterion weights and refined scoring conditions as Proposal 2 (Complexity & Design 40%, Reputational Risk 30%, Materiality 20%, Uncertainty 10%). Autonomy Level is added to Complexity & Design: Deployment & Dependency 15%, Data Sensitivity 35%, System Access 30%, Autonomy Level 20%.",cw:[20,40,10,30],sw:[80,20,15,35,30,40,60,25,25,50,20],ref:true,rem:false}];
+ {id:"p1",tab:"Proposal 1",name:"Proposal 1 — Reweighting and refined scoring conditions",desc:"Materiality 30%, Security & Data Access 35%, Reputational Risk 35%, Uncertainty 0%. Same refined conditions as Proposal 2.",cw:[30,35,0,35],sw:BSW,ref:true,rem:false},
+ {id:"p2",tab:"Proposal 2",name:"Proposal 2 — Reweighting and refined scoring conditions",desc:"Security & Data Access 40%, Reputational Risk 30%, Materiality 20%, Uncertainty 10%. Scoring conditions refined; System Access graded by the criticality of the system written to.",cw:[20,40,10,30],sw:BSW,ref:true,rem:false},
+ {id:"p4",tab:"Proposal 3",name:"Proposal 3 — Proposal 2 with Autonomy Level",desc:"Same criterion weights and refined scoring conditions as Proposal 2 (Security & Data Access 40%, Reputational Risk 30%, Materiality 20%, Uncertainty 10%). Autonomy Level is added to Security & Data Access: Deployment & Dependency 15%, Data Sensitivity 35%, System Access 30%, Autonomy Level 20%.",cw:[20,40,10,30],sw:[80,20,15,35,30,40,60,25,25,50,20],ref:true,rem:false,rec:true}];
 // s = sub-criterion scores (System Access scored on the refined text); a4 = System Access under the current text (used by Current and Proposal 1)
 const BASE=[
  ["b1","Fintech","Customer Service FAQ Chatbot",[3,3,3,3,2,2,1,3,3,3],2],["b2","Fintech","AI Evaluator",[1,2,3,2,1,2,1,1,1,1],1],
