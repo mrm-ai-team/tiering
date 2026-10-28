@@ -68,6 +68,7 @@ select.sc{font:inherit;font-size:14px;padding:3px 4px;border:1px solid var(--lin
 select.sc.edited{border-color:var(--changed);color:var(--changed);font-weight:700}
 input.txt{font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg);width:100%;min-width:150px}
 .note{font-size:13px;color:var(--muted)}
+.note.warn{color:#b3261e;font-weight:600}
 .save{font-size:13px;color:var(--muted)}
 .who{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.who img{width:18px;height:18px;border-radius:50%}
 .savebar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px}
@@ -100,8 +101,8 @@ input.txt{font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--lin
 <script>
 const API="https://script.google.com/macros/s/AKfycbxT4r4-8FzTFGo77LLRw49vbkwM484KF52SDTKv-3UfvkCcslYpZKTmPEHeme9_xa9CVw/exec";
 window.storage={
-  get:async function(k){const r=await fetch(API+"?api=get&t="+Date.now(),{cache:"no-store"}); if(!r.ok) throw new Error("http "+r.status); const v=await r.text(); if(!v) throw new Error("empty"); return {key:k,value:v,shared:true};},
-  set:async function(k,v){const r=await fetch(API,{method:"POST",body:v}); const t=await r.text(); if(t!=="ok") throw new Error(t); return {key:k,value:v,shared:true};}
+  get:async function(k){const r=await fetch(API+"?api=get&t="+Date.now(),{cache:"no-store",signal:AbortSignal.timeout(25000)}); if(!r.ok) throw new Error("http "+r.status); const v=await r.text(); if(!v) throw new Error("empty"); return {key:k,value:v,shared:true};},
+  set:async function(k,v){const r=await fetch(API,{method:"POST",body:v,signal:AbortSignal.timeout(40000)}); const t=await r.text(); if(t!=="ok") throw new Error(t); return {key:k,value:v,shared:true};}
 };
 </script>
 <script type="application/json" id="shared">{"models":{},"edits":{},"log":[{"at":"2026-10-14T14:02:51.170Z","model":"New model","action":"Removed","detail":"Scores: – / – / – / – / – / – / – / – / – / –","by":"Fidan"},{"at":"2026-10-14T14:02:42.982Z","model":"New model","action":"Added","detail":"New model row created","by":"Fidan"}]}</script>
@@ -210,9 +211,13 @@ function renderSavebar(){
     el.innerHTML=`<label for="myname"><b>Your name</b></label><input class="txt" id="myname" style="max-width:240px" placeholder="Name, company"><span class="note" id="barmsg" role="status"></span>`;
     document.getElementById("myname").value=myName;
   }
-  let m=barMsg;
-  if(!m) m=saving?"Saving…":pending.length?(myName.trim()?"Saving…":"Enter your name — your changes are saved automatically as soon as you do."):"All changes are saved automatically and logged with your name.";
-  document.getElementById("barmsg").textContent=m;
+  let m=barMsg, warn=/could not|not saved/i.test(m);
+  if(!m){
+    if(!pending.length) m="All changes are saved automatically and logged with your name.";
+    else if(!myName.trim()){m="Your "+pending.length+" change(s) are NOT saved yet — enter your name and they will be saved automatically."; warn=true;}
+    else m=(saving?"Saving ":"Waiting to save ")+pending.length+" change(s) — please keep this page open…";
+  }
+  const be=document.getElementById("barmsg"); be.textContent=m; be.classList.toggle("warn",warn);
 }
 let saveTimer=null;
 function scheduleSave(){clearTimeout(saveTimer); saveTimer=setTimeout(autoSave,800);}
@@ -429,6 +434,7 @@ async function refreshShared(){
   if(!j){banner("Could not load the latest shared data — showing the last copy this browser has. Retrying automatically; please do not re-add models."); return;}
   banner(""); liveLoaded=true;
   saved=j; if(draftData&&!pending.length) restoreDraft(); else if(!pending.length) work=JSON.parse(JSON.stringify({models:saved.models,edits:saved.edits})); render();}
+window.addEventListener("beforeunload",e=>{if(pending.length||saving){e.preventDefault(); e.returnValue="";}});
 render();
 if(pending.length) scheduleSave();
 if(window.storage){document.head.insertAdjacentHTML("beforeend","<style>details.imp{display:none}</style>");loadSnapshot();refreshShared(); setInterval(refreshShared,20000); document.addEventListener("visibilitychange",()=>{if(!document.hidden) refreshShared();});}
