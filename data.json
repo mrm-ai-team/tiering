@@ -350,6 +350,24 @@
     2
    ]
   },
+  "mmvqqhxfon2ig": {
+   "au": 1,
+   "co": "Fintech",
+   "createdAt": "2026-10-27T13:41:29.604Z",
+   "name": "Contract Document Information Extraction",
+   "s": [
+    1,
+    1,
+    1,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
   "mmvuxk3cr75js": {
    "au": 1,
    "co": "Fintech",
@@ -362,6 +380,60 @@
     2,
     1,
     1,
+    1,
+    1,
+    1,
+    1
+   ]
+  },
+  "mmw0o58o0hlo7": {
+   "au": 2,
+   "co": "Fintech",
+   "createdAt": "2026-11-03T12:33:20.160Z",
+   "name": "TTS",
+   "s": [
+    1,
+    1,
+    1,
+    3,
+    1,
+    1,
+    1,
+    1,
+    3,
+    1
+   ]
+  },
+  "mmw0o7b2elss8": {
+   "au": 1,
+   "co": "Fintech",
+   "createdAt": "2026-11-03T12:34:56.582Z",
+   "name": "HR AI Call Screening",
+   "s": [
+    1,
+    2,
+    1,
+    2,
+    1,
+    2,
+    1,
+    3,
+    1,
+    3
+   ]
+  },
+  "mmw0o9y4ne53x": {
+   "au": 1,
+   "co": "Fintech",
+   "createdAt": "2026-11-03T12:36:59.783Z",
+   "name": "Memorandum AI",
+   "s": [
+    1,
+    1,
+    2,
+    3,
+    1,
+    2,
     1,
     1,
     1,
