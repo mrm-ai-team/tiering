@@ -441,21 +441,21 @@
    ]
   },
   "mmw4suz01cq51": {
-   "au": null,
+   "au": 1,
    "co": "Fintech",
    "createdAt": "2026-11-06T09:56:23.858Z",
    "name": "CSAT Segmentation",
    "s": [
     2,
     2,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
    ]
   }
  }
